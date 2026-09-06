@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(41);
+select plan(48);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
 values
@@ -46,26 +46,85 @@ values
   ('b6400000-0000-4000-8000-000000000003','b6200000-0000-4000-8000-000000000001','b6100000-0000-4000-8000-000000000003','b6300000-0000-4000-8000-000000000003')
 on conflict (community_id,user_id) do update set role_id = excluded.role_id;
 
+insert into public.channels(id,community_id,name,type,position)
+values
+  ('b6600000-0000-4000-8000-000000000001','b6200000-0000-4000-8000-000000000001','delete-me','text',1),
+  ('b6600000-0000-4000-8000-000000000002','b6200000-0000-4000-8000-000000000001','keep-me','text',2)
+on conflict (id) do update set community_id = excluded.community_id, name = excluded.name, type = excluded.type, position = excluded.position;
+
 select set_config('request.jwt.claim.role','authenticated',true);
 select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000002',true);
 set local role authenticated;
-select throws_like($$select * from public.request_community_deletion('b6200000-0000-4000-8000-000000000001')$$,'%COMMUNITY_OWNER_REQUIRED%','member cannot request community deletion');
-select throws_like($$select * from public.cancel_community_deletion('b6200000-0000-4000-8000-000000000001')$$,'%COMMUNITY_OWNER_REQUIRED%','foreign owner cannot cancel community deletion');
+select throws_like($$select * from public.delete_owned_community('b6200000-0000-4000-8000-000000000001')$$,'%COMMUNITY_OWNER_REQUIRED%','member cannot delete community');
 reset role;
 
 select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000003',true);
 set local role authenticated;
-select throws_like($$select * from public.request_community_deletion('b6200000-0000-4000-8000-000000000001')$$,'%COMMUNITY_OWNER_REQUIRED%','moderator cannot request community deletion');
+select throws_like($$select * from public.delete_owned_community('b6200000-0000-4000-8000-000000000001')$$,'%COMMUNITY_OWNER_REQUIRED%','moderator cannot delete community');
+reset role;
+
+select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000004',true);
+set local role authenticated;
+select throws_like($$select * from public.delete_owned_community('b6200000-0000-4000-8000-000000000001')$$,'%COMMUNITY_OWNER_REQUIRED%','foreign user cannot delete community');
+reset role;
+
+select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000002',true);
+set local role authenticated;
+select throws_like($$select * from public.delete_managed_channel('b6600000-0000-4000-8000-000000000001', 'anything')$$,'%PERMISSION_DENIED%','member cannot delete a channel');
+reset role;
+
+select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000003',true);
+set local role authenticated;
+select throws_like($$select * from public.delete_managed_channel('b6600000-0000-4000-8000-000000000001', 'anything')$$,'%PERMISSION_DENIED%','moderator cannot delete a channel');
+reset role;
+
+select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000004',true);
+set local role authenticated;
+select throws_like($$select * from public.delete_managed_channel('b6600000-0000-4000-8000-000000000001', 'anything')$$,'%PERMISSION_DENIED%','foreign user cannot delete a channel');
 reset role;
 
 select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000001',true);
 set local role authenticated;
-select lives_ok($$select * from public.request_community_deletion('b6200000-0000-4000-8000-000000000001')$$,'owner schedules a 30-day deletion');
-select ok((select scheduled_deletion_at between now() + interval '29 days 23 hours' and now() + interval '30 days 1 hour' from public.communities where id='b6200000-0000-4000-8000-000000000001'),'community schedule is server-issued for 30 days');
-select ok((select visibility='private' and not public_read_enabled and not discovery_listed from public.communities where id='b6200000-0000-4000-8000-000000000001'),'pending deletion leaves discovery and public access');
-select throws_like($$insert into public.community_members(community_id,user_id,role_id) values('b6200000-0000-4000-8000-000000000001','b6100000-0000-4000-8000-000000000002','b6300000-0000-4000-8000-000000000002')$$,'%COMMUNITY_DELETION_PENDING%','pending deletion disables new joins');
-select lives_ok($$select * from public.cancel_community_deletion('b6200000-0000-4000-8000-000000000001')$$,'owner can cancel own pending deletion');
-select ok((select scheduled_deletion_at is null and visibility='public' and public_read_enabled and discovery_listed from public.communities where id='b6200000-0000-4000-8000-000000000001'),'community cancellation restores the saved public settings');
+select lives_ok($$select * from public.delete_managed_channel('b6600000-0000-4000-8000-000000000001', 'wrong-name-is-ignored')$$,'owner can immediately delete a channel without typing its name');
+reset role;
+
+select set_config('request.jwt.claim.role','service_role',true);
+set local role service_role;
+select is((select count(*) from public.channels where id='b6600000-0000-4000-8000-000000000001'),0::bigint,'deleted channel is immediately inaccessible');
+reset role;
+
+select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claim.role','authenticated',true);
+set local role authenticated;
+select lives_ok($$select * from public.delete_managed_channel('b6600000-0000-4000-8000-000000000001', null)$$,'repeated channel deletion is safe');
+select throws_like($$update public.communities set deleted_at=now() where id='b6200000-0000-4000-8000-000000000001'$$,'%COMMUNITY_DELETION_LIFECYCLE_MANAGED_SERVER_SIDE%','owner cannot directly set community deleted_at');
+reset role;
+
+select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+select lives_ok($$select * from public.delete_owned_community('b6200000-0000-4000-8000-000000000001')$$,'owner immediately deletes community');
+reset role;
+
+select set_config('request.jwt.claim.role','service_role',true);
+set local role service_role;
+select ok((select deleted_at is not null and archived_at is not null and scheduled_deletion_at is null and not discovery_listed from public.communities where id='b6200000-0000-4000-8000-000000000001'),'deleted community is immediately hidden without a recovery schedule');
+select is(to_regprocedure('public.request_community_deletion(uuid)'), null::regprocedure,'old community recovery request RPC is removed');
+select is(to_regprocedure('public.cancel_community_deletion(uuid)'), null::regprocedure,'old community recovery cancel RPC is removed');
+select is(to_regprocedure('public.finalize_due_community_deletions(integer)'), null::regprocedure,'old community finalizer is removed');
+select is(has_function_privilege('authenticated', 'public.archive_community(uuid,text,text)', 'execute'), false,'legacy recoverable archive RPC is unavailable to normal users');
+reset role;
+
+select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000002',true);
+select set_config('request.jwt.claim.role','authenticated',true);
+set local role authenticated;
+select is((select count(*) from public.communities where id='b6200000-0000-4000-8000-000000000001'),0::bigint,'deleted community is no longer visible to existing members');
+select throws_like($$insert into public.community_members(community_id,user_id,role_id) values('b6200000-0000-4000-8000-000000000001','b6100000-0000-4000-8000-000000000004','b6300000-0000-4000-8000-000000000002')$$,'%permission denied%','deleted community rejects new joins');
+reset role;
+
+select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claim.role','authenticated',true);
+set local role authenticated;
+select lives_ok($$select * from public.delete_owned_community('b6200000-0000-4000-8000-000000000001')$$,'repeated owner delete is safe and cannot restore community');
 reset role;
 
 -- The broad own-row profile policy remains available for normal edits, while
@@ -130,11 +189,6 @@ reset role;
 select set_config('request.jwt.claim.role','service_role',true);
 set local role service_role;
 select lives_ok($$insert into public.account_security_events(user_id,event_type) values('b6100000-0000-4000-8000-000000000001','provider_linked')$$,'deletion migration preserves existing security audit event types');
-select set_config('picom.community_deletion_lifecycle','trusted',true);
-update public.communities set deletion_requested_at=now()-interval '31 days', scheduled_deletion_at=now()-interval '1 minute' where id='b6200000-0000-4000-8000-000000000001';
-select lives_ok($$select * from public.finalize_due_community_deletions(10)$$,'service finalizer finalizes due communities');
-select ok((select deleted_at is not null from public.communities where id='b6200000-0000-4000-8000-000000000001'),'service finalizer is idempotent tombstone cleanup');
-select lives_ok($$select * from public.finalize_due_community_deletions(10)$$,'service finalizer safely retries empty batch');
 
 insert into public.account_deletion_requests(user_id,status,requested_at,email_confirmed_at,scheduled_deletion_at)
 values ('b6100000-0000-4000-8000-000000000004','pending_deletion',now()-interval '31 days',now()-interval '31 days',now()-interval '1 minute');

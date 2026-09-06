@@ -3,7 +3,6 @@ import type { CommunityAccess } from "../types/communityAccess";
 import type { UpcomingEvent } from "../types/events";
 import type { CreateCommunityEventInput, UpdateCommunityEventInput } from "../services/communityEventService";
 import { CommunityOnboardingChecklist } from "./CommunityOnboardingChecklist";
-import { CommunityOwnershipTransferPanel } from "./CommunityOwnershipTransferPanel";
 import { CommunityDeleteSafetyPanel } from "./CommunityDeleteSafetyPanel";
 import { CommunityStructureManagementPanel } from "./CommunityStructureManagementPanel";
 import type { ReportRecord } from "../types/reports";
@@ -29,6 +28,7 @@ type Props = {
   onCreateChannel: (categoryId: string) => void;
   onEditChannel: (channel: Channel) => void;
   onDeleteChannel: (channel: Channel) => void;
+  onCommunityDeleted: (communityId: string) => void;
   onMoveChannel: (categoryId: string, channelId: string, direction: "up" | "down") => void;
   onCommunityMembersChanged: (members: Member[]) => void;
   onOpenModerationSource: (report: ReportRecord) => void;
@@ -37,7 +37,7 @@ type Props = {
   onCancelEvent: (eventId: string) => void;
 };
 
-export function CommunityAdminDeferredSection({ section, community, currentUser, access, events, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onCreateChannel, onEditChannel, onDeleteChannel, onMoveChannel, onCommunityMembersChanged, onOpenModerationSource, onCreateEvent, onUpdateEvent, onCancelEvent }: Props) {
+export function CommunityAdminDeferredSection({ section, community, currentUser, access, events, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onCreateChannel, onEditChannel, onDeleteChannel, onMoveChannel, onCommunityDeleted, onCommunityMembersChanged, onOpenModerationSource, onCreateEvent, onUpdateEvent, onCancelEvent }: Props) {
   if (section === "overview") return <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} />;
   if (section === "channels") return <CommunityStructureManagementPanel community={community} currentUser={currentUser} access={access} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onMoveCategory={onMoveCategory} onCreateChannel={onCreateChannel} onEditChannel={onEditChannel} onDeleteChannel={onDeleteChannel} onMoveChannel={onMoveChannel} />;
   if (section === "events") return <div className="community-admin-events-stack"><CommunityEventsAdminSection community={community} currentUserId={currentUser.userId} events={events} onCreate={onCreateEvent} onUpdate={onUpdateEvent} onCancel={onCancelEvent} /><MeetingHistoryPanel communityId={community.id} scope="community" canViewAttendance={access.permissions.includes("viewMeetingHistory")} /></div>;
@@ -47,5 +47,5 @@ export function CommunityAdminDeferredSection({ section, community, currentUser,
   if (section === "emojis") return <CommunityEmojisAdminSection communityId={community.id} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />;
   if (section === "stickers") return <CommunityStickersAdminSection communityId={community.id} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />;
   if (!access.isOwner) return null;
-  return <div className="community-admin-tools-stack"><CommunityOwnershipTransferPanel community={community} currentUser={currentUser} /><CommunityDeleteSafetyPanel community={community} currentUser={currentUser} /></div>;
+  return <div className="community-admin-tools-stack"><CommunityDeleteSafetyPanel community={community} currentUser={currentUser} onDeleted={onCommunityDeleted} /></div>;
 }

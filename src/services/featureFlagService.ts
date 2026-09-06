@@ -52,6 +52,7 @@ export const FEATURE_FLAG_KEYS = [
   "enablePublisherStatements",
   "enableCreatorStudio",
   "DESKTOP_NOTIFICATIONS_ENABLED",
+  "COMMUNITY_IMMEDIATE_DELETION_ENABLED",
   "COMMUNITY_30_DAY_DELETION_ENABLED",
   "ACCOUNT_30_DAY_DELETION_ENABLED",
 ] as const;
@@ -98,6 +99,8 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   publisherStatements: "enablePublisherStatements",
   creatorStudio: "enableCreatorStudio",
   desktopNotifications: "DESKTOP_NOTIFICATIONS_ENABLED",
+  communityImmediateDeletion: "COMMUNITY_IMMEDIATE_DELETION_ENABLED",
+  /** @deprecated Community recovery no longer exists; retained for safe remote-config parsing. */
   communityThirtyDayDeletion: "COMMUNITY_30_DAY_DELETION_ENABLED",
   accountThirtyDayDeletion: "ACCOUNT_30_DAY_DELETION_ENABLED",
 } as const satisfies Record<string, FeatureFlagKey>);
@@ -183,6 +186,7 @@ function createDefaultFeatureFlags(): FeatureFlags {
     DESKTOP_NOTIFICATIONS_ENABLED: false,
     // Deletion lifecycles are server-authoritative but their owner-facing entry
     // points remain off until hosted certification and controlled rollout.
+    COMMUNITY_IMMEDIATE_DELETION_ENABLED: false,
     COMMUNITY_30_DAY_DELETION_ENABLED: false,
     ACCOUNT_30_DAY_DELETION_ENABLED: false,
   });

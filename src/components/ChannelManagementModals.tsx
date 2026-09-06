@@ -41,27 +41,3 @@ export function EditChannelModal({ channel, categories, onClose, onSubmit }: Edi
     </form>
   </div>;
 }
-
-type DeleteChannelModalProps = { channel: Channel; isLastChannel: boolean; onClose: () => void; onConfirm: (confirmationName: string) => Promise<void> };
-
-export function DeleteChannelModal({ channel, isLastChannel, onClose, onConfirm }: DeleteChannelModalProps) {
-  const [confirmationName, setConfirmationName] = useState("");
-  const [deleting, setDeleting] = useState(false);
-  const matches = confirmationName.trim().toLowerCase() === channel.name.trim().toLowerCase();
-  const dialogRef = useDialogFocusTrap<HTMLFormElement>(onClose);
-
-  return <div className="channel-management-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <form ref={dialogRef} tabIndex={-1} className="channel-management-modal channel-management-modal--danger" role="alertdialog" aria-modal="true" aria-labelledby="delete-channel-title" onSubmit={async (event) => {
-      event.preventDefault();
-      if (!matches || isLastChannel || deleting) return;
-      setDeleting(true);
-      try { await onConfirm(confirmationName); } finally { setDeleting(false); }
-    }}>
-      <header><div><span className="eyebrow">Danger zone</span><h2 id="delete-channel-title">Delete #{channel.name}?</h2></div><button type="button" className="icon-button" aria-label="Close delete channel" onClick={onClose}><AppIcon name="close" size="md" /></button></header>
-      <p>Messages and attachments in this channel will no longer be available. This action cannot be undone.</p>
-      {isLastChannel ? <div className="channel-management-warning">Create another channel before deleting the final channel.</div> : null}
-      <label>Type <strong>{channel.name}</strong> to confirm<input value={confirmationName} autoFocus onChange={(event) => setConfirmationName(event.target.value)} /></label>
-      <footer><button type="button" className="secondary-action" onClick={onClose}>Cancel</button><button type="submit" className="danger-action" disabled={!matches || isLastChannel || deleting}>{deleting ? "Deleting..." : "Delete channel"}</button></footer>
-    </form>
-  </div>;
-}

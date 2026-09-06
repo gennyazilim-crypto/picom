@@ -1,27 +1,30 @@
-# Community Delete Safety Placeholder
+# Community deletion policy
 
-Picom prepares community deletion as an owner-only, confirmation-protected placeholder. The renderer does not delete communities, channels, messages, members, attachments, or audit records.
+Community deletion is an **immediate, irreversible** owner action. It is not
+part of the account-deletion recovery lifecycle.
 
-## Current behavior
+## Product flow
 
-- Current owners see a Delete safety card in the community sidebar setup area.
-- The owner must type the exact community name before preparing the placeholder.
-- The placeholder records local intent only.
-- Existing community data remains visible and unchanged.
+1. The community founder opens **Topluluğu sil** in Danger Zone.
+2. PICOM shows one confirmation dialog stating that the action cannot be
+   undone.
+3. The trusted `delete_owned_community` RPC verifies `auth.uid()` against the
+   canonical `communities.owner_id` and makes the community unavailable at
+   once.
 
-## Future production requirements
+There is no password, typed community name, archive reason, email, recovery
+screen, scheduled deletion date, or restore action.
 
-- Real deletion must be a trusted backend/Supabase operation.
-- Require owner permission server-side.
-- Prefer soft deletion with `deletedAt` so audit history can be retained.
-- Prevent access to soft-deleted communities once backend support exists.
-- Clean up realtime rooms and active client state after successful backend deletion.
-- Require a final confirmation and clear warning before destructive production behavior.
+## Immediate effects
 
-## Manual verification
+- The community is removed from normal navigation, discovery, search and
+  Community Live surfaces.
+- Existing member, channel, message and attachment access is denied by the
+  active-community RLS boundary.
+- Pending invites are revoked, joins are denied and active Community Live
+  sessions are ended.
+- The community owner, moderator, member and foreign users cannot restore it.
 
-1. Sign in as/mock a community owner.
-2. Open a community sidebar.
-3. Confirm Prepare delete is disabled until the exact community name is typed.
-4. Prepare the placeholder and confirm no community disappears.
-5. Clear the placeholder.
+Only minimum audit/security records that must be retained remain as
+non-restorable records. Personal account deletion is documented separately and
+continues to require email confirmation before its 30-day recovery period.

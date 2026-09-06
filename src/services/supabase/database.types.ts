@@ -898,9 +898,7 @@ export type Database = {
       cancel_current_user_account_deletion: { Args: Record<string, never>; Returns: Array<{ request_id: string; canceled_at: string }> };
       begin_current_user_account_deletion: { Args: Record<string, never>; Returns: Array<{ request_id: string; email_confirmation_expires_at: string | null }> };
       get_current_user_account_deletion_status: { Args: Record<string, never>; Returns: Array<{ request_id: string; status: string; requested_at: string; scheduled_deletion_at: string | null }> };
-      request_community_deletion: { Args: { target_community_id: string }; Returns: Array<{ community_id: string; scheduled_deletion_at: string }> };
-      cancel_community_deletion: { Args: { target_community_id: string }; Returns: Array<{ community_id: string; cancelled_at: string }> };
-      get_community_deletion_status: { Args: { target_community_id: string }; Returns: Array<{ deletion_requested_at: string | null; scheduled_deletion_at: string | null; deleted_at: string | null }> };
+      delete_owned_community: { Args: { target_community_id: string }; Returns: Array<{ community_id: string; deleted_at: string }> };
       list_public_discovery_communities: {
         Args: { search_text?: string | null; category_filter?: string | null; result_limit?: number };
         Returns: Array<{ id: string; name: string; description: string | null; icon_url: string | null; accent_color: string; category: string | null; member_count: number; join_policy: "open" | "request" }>;

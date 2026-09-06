@@ -10,6 +10,8 @@ import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
 import type { CommunitySummary } from "../../services/communityService";
 import { CommunitySettingsEditor } from "./CommunitySettingsEditor";
 import { isV1CommunityAdminSectionEnabled } from "../../config/v1ReleaseScope";
+import { translateSettings } from "../../services/settings/settingsI18n";
+import { settingsService } from "../../services/settingsService";
 
 const CommunityRoleManagement = lazy(() => import("./CommunityRoleManagement").then((module) => ({ default: module.CommunityRoleManagement })));
 const CommunityMemberRoleAssignment = lazy(() => import("./CommunityMemberRoleAssignment").then((module) => ({ default: module.CommunityMemberRoleAssignment })));
@@ -178,13 +180,16 @@ export function CommunityModerationSection({ children }: { children?: ReactNode 
 }
 
 export function CommunityDangerZone({ children }: { children?: ReactNode }) {
+  const language = settingsService.getSettings().appearanceSettings.language;
+  const t = (key: Parameters<typeof translateSettings>[0]) => translateSettings(key, language);
+
   return (
     <section className="community-admin-section community-danger-section">
       <header className="community-mgmt-card-header community-danger-section-header">
         <div className="community-mgmt-card-header-copy">
-          <p className="eyebrow">Owner only</p>
-          <h3>Danger zone</h3>
-          <p>Destructive actions require explicit confirmation and remain auditable.</p>
+          <p className="eyebrow">{t("community.danger.ownerOnly")}</p>
+          <h3>{t("community.danger.title")}</h3>
+          <p>{t("community.danger.description")}</p>
         </div>
         <span className="community-mgmt-card-icon community-danger-section-icon" aria-hidden="true">
           <AppIcon name="trash" size="md" />

@@ -118,7 +118,7 @@ export function CommunityStructureManagementPanel(props: Props) {
                 <button type="button" className="community-mgmt-action community-mgmt-action--ghost community-mgmt-action--icon" disabled={busy || channelIndex === category.channels.length - 1} aria-label={`Move ${channel.name} down`} onClick={() => void run(() => Promise.resolve(props.onMoveChannel(category.id, channel.id, "down")))}><AppIcon name="chevronDown" size="sm" /></button>
                 {canManageOverrides ? <button type="button" className="community-mgmt-action community-mgmt-action--ghost" onClick={() => void loadOverrides(channel.id)}>Access</button> : null}
                 <button type="button" className="community-mgmt-action community-mgmt-action--ghost" onClick={() => props.onEditChannel(channel)}>Edit</button>
-                <button type="button" className="community-mgmt-action community-mgmt-action--ghost community-mgmt-action--danger" disabled={channels.length <= 1} onClick={() => props.onDeleteChannel(channel)}>Delete</button>
+                {access.isOwner ? <button type="button" className="community-mgmt-action community-mgmt-action--ghost community-mgmt-action--danger" disabled={channels.length <= 1} title={channels.length <= 1 ? "Son kanal silinemez." : "Bu işlem geri alınamaz."} onClick={() => props.onDeleteChannel(channel)}>Kanalı sil</button> : null}
               </div>
             </div>)}
             <button type="button" className="community-mgmt-action community-mgmt-action--ghost structure-add-channel" onClick={() => props.onCreateChannel(category.id)}><AppIcon name="plus" size="sm" />Create channel in {category.name}</button>

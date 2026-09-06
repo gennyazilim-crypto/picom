@@ -42,7 +42,6 @@ export type DeleteChannelInput = Readonly<{
   channelId: string;
   communityId: string;
   channelName: string;
-  confirmName?: string;
   fallbackChannelId: string | null;
 }>;
 
@@ -203,9 +202,6 @@ export const channelService = {
       return { ok: false, error: { code: "VALIDATION_ERROR", message: "Channel ID is required." } };
     }
 
-    if (normalizeChannelName(input.confirmName ?? "") !== normalizeChannelName(input.channelName)) {
-      return { ok: false, error: { code: "VALIDATION_ERROR", message: "Type the channel name to confirm deletion." } };
-    }
     if (!input.fallbackChannelId) {
       return { ok: false, error: { code: "LAST_CHANNEL_REQUIRED", message: "Create another channel before deleting the final channel." } };
     }
@@ -213,7 +209,7 @@ export const channelService = {
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
     const rpcClient = configured.data as unknown as { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
-    const { data, error } = await rpcClient.rpc("delete_managed_channel", { target_channel_id: input.channelId, confirmation_name: input.confirmName ?? "" });
+    const { data, error } = await rpcClient.rpc("delete_managed_channel", { target_channel_id: input.channelId, confirmation_name: null });
     const row = (Array.isArray(data) ? data[0] : data) as { deleted_channel_id?: string; fallback_channel_id?: string | null } | null;
     if (error || !row?.deleted_channel_id) return { ok: false, error: { code: "CHANNEL_DELETE_FAILED", message: error?.message ?? "Could not delete channel." } };
     await auditLogService.append({ communityId: input.communityId, actionType: "channel_delete", targetType: "channel", targetId: input.channelId, reason: `Deleted #${input.channelName}` });

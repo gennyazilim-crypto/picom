@@ -2,7 +2,9 @@
 
 ## Scope
 
-Picom's Community Admin panel provides an owner/admin audit viewer and an owner-only Danger Zone. The supported destructive lifecycle action is recoverable archive, not hard delete.
+Picom's Community Admin panel provides an owner/admin audit viewer and an
+owner-only Danger Zone. The supported community-removal action is immediate,
+irreversible deletion; it is separate from account deletion recovery.
 
 ## Audit contract
 
@@ -19,20 +21,25 @@ Picom's Community Admin panel provides an owner/admin audit viewer and an owner-
 - Community owner, legacy primary role, multi-role links, role audit rows, and append-only audit evidence update atomically.
 - Invalid target, bad confirmation, missing role configuration, or any write failure rolls back the full operation.
 
-## Community archive
+## Community deletion
 
-- Current owner only.
-- Requires a reason, exact-name confirmation, and password reauthentication.
-- The RPC disables public reads and discovery and records archive actor/time/reason.
-- Community content and audit/security records are retained. No renderer hard-delete path exists.
+- Current owner only; moderator, member and foreign users are denied by the
+  trusted RPC.
+- Requires one clear irreversible confirmation only. It does not ask for a
+  reason, exact-name typing, password or email.
+- The transaction removes user-facing community access immediately, revokes
+  invites, blocks joins, ends Community Live sessions and records a safe audit
+  event.
+- Required audit/security retention is non-restorable. There is no community
+  restore action, scheduler or finalizer.
 
 ## Backup and recovery impact
 
 - Verify a database backup before risky lifecycle migrations or operations changes.
-- Archive does not replace backup: storage objects and database metadata must remain consistent.
-- Recovery is an operations-controlled restore after relationship, RLS, storage, Radio, Podcast, and audit continuity checks.
-- A failed archive/transfer transaction needs no compensating partial write because PostgreSQL rolls it back atomically.
-- Follow `docs/backup-verification.md`, `docs/database-restore-drill.md`, and `docs/rollback-runbook.md` before restoring access.
+- Community deletion does not replace backup: storage objects and database metadata must remain consistent.
+- A retained audit record does not create a product restore path.
+- A failed delete/transfer transaction needs no compensating partial write because PostgreSQL rolls it back atomically.
+- Follow `docs/backup-verification.md`, `docs/database-restore-drill.md`, and `docs/rollback-runbook.md` for infrastructure recovery, not user-facing community restoration.
 
 ## Evidence limits
 

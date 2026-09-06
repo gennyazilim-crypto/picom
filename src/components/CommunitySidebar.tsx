@@ -39,6 +39,7 @@ type CommunitySidebarProps = {
   onCreateChannel: (categoryId: string) => void;
   onEditChannel: (channel: Channel) => void;
   onDeleteChannel: (channel: Channel) => void;
+  onCommunityDeleted: (communityId: string) => void;
   onOpenSettings: () => void;
   onLogout: () => void | Promise<void>;
   onChannelContextMenu: (event: MouseEvent, channel: Channel) => void;
@@ -79,7 +80,7 @@ type CommunitySidebarProps = {
 
 type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | "invite" | "joinInvite" | "report" | null;
 
-export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onEditChannel, onDeleteChannel, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onMemberRolesChanged, onCommunityMembersChanged, onOpenModerationSource, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent, voiceOccupancyByChannelId = {}, voiceState, onToggleVoiceMute, onToggleVoiceDeafen, onToggleVoiceCamera, onOpenVoiceRoom, onOpenVoiceScreenShare, onLeaveVoice, canUseVoiceCamera = true, canShareVoiceScreen = true, onOpenMicrophoneSettings, onOpenHeadphoneSettings, onReloadChannels }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onEditChannel, onDeleteChannel, onCommunityDeleted, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onMemberRolesChanged, onCommunityMembersChanged, onOpenModerationSource, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent, voiceOccupancyByChannelId = {}, voiceState, onToggleVoiceMute, onToggleVoiceDeafen, onToggleVoiceCamera, onOpenVoiceRoom, onOpenVoiceScreenShare, onLeaveVoice, canUseVoiceCamera = true, canShareVoiceScreen = true, onOpenMicrophoneSettings, onOpenHeadphoneSettings, onReloadChannels }: CommunitySidebarProps) {
   const canReorderChannels = canManageChannels(access);
   const visibleCategories = community.categories
     .map((category) => ({ ...category, channels: category.channels.filter((channel) => isV1ChannelTypeEnabled(channel.type)) }))
@@ -94,7 +95,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
   useEffect(() => { if (pendingInviteCode) setOpenPanel("joinInvite"); }, [pendingInviteCode]);
   const deferredAdminSection = (section: import("./CommunityAdminDeferredSection").CommunityAdminDeferredSectionId) => (
     <Suspense fallback={<div className="empty-state compact" role="status">Opening admin tools...</div>}>
-      <CommunityAdminDeferredSection section={section} community={community} currentUser={currentUser} access={access} events={events} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onMoveCategory={onMoveCategory} onCreateChannel={onCreateChannel} onEditChannel={onEditChannel} onDeleteChannel={onDeleteChannel} onMoveChannel={onMoveChannel} onCommunityMembersChanged={onCommunityMembersChanged} onOpenModerationSource={(report) => { setOpenPanel(null); onOpenModerationSource(report); }} onCreateEvent={onCreateEvent} onUpdateEvent={onUpdateEvent} onCancelEvent={onCancelEvent} />
+      <CommunityAdminDeferredSection section={section} community={community} currentUser={currentUser} access={access} events={events} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onMoveCategory={onMoveCategory} onCreateChannel={onCreateChannel} onEditChannel={onEditChannel} onDeleteChannel={onDeleteChannel} onMoveChannel={onMoveChannel} onCommunityDeleted={onCommunityDeleted} onCommunityMembersChanged={onCommunityMembersChanged} onOpenModerationSource={(report) => { setOpenPanel(null); onOpenModerationSource(report); }} onCreateEvent={onCreateEvent} onUpdateEvent={onUpdateEvent} onCancelEvent={onCancelEvent} />
     </Suspense>
   );
   const adminSectionTools = {

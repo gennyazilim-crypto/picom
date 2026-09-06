@@ -4,6 +4,8 @@ import profile from "./tr-part-modal-profile.mjs";
 import notifications from "./tr-part-modal-notifications.mjs";
 import voiceCompanionDiag from "./tr-part-modal-voice-companion-diag.mjs";
 import advanced from "./tr-part-modal-advanced.mjs";
+import deletion from "./tr-part-modal-deletion.mjs";
+import runtime from "./tr-part-modal-runtime.mjs";
 
 const merged = {
   ...privacy,
@@ -11,6 +13,8 @@ const merged = {
   ...notifications,
   ...voiceCompanionDiag,
   ...advanced,
+  ...deletion,
+  ...runtime,
 };
 
 const missing = Object.keys(settingsModalEn).filter((key) => !merged[key]);

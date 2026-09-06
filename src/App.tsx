@@ -216,7 +216,6 @@ const DesktopContextMenu = lazy(() => import("./components/DesktopContextMenu").
 const CreateCommunityModal = lazy(() => import("./components/CreateCommunityModal").then((module) => ({ default: module.CreateCommunityModal })));
 const CreateChannelModal = lazy(() => import("./components/CreateChannelModal").then((module) => ({ default: module.CreateChannelModal })));
 const EditChannelModal = lazy(() => import("./components/ChannelManagementModals").then((module) => ({ default: module.EditChannelModal })));
-const DeleteChannelModal = lazy(() => import("./components/ChannelManagementModals").then((module) => ({ default: module.DeleteChannelModal })));
 const MemberModerationModal = lazy(() => import("./components/MemberModerationModal").then((module) => ({ default: module.MemberModerationModal })));
 const ReportModal = lazy(() => import("./components/ReportModal").then((module) => ({ default: module.ReportModal })));
 const InvitePeopleModal = lazy(() => import("./components/CommunityInviteModals").then((module) => ({ default: module.InvitePeopleModal })));
@@ -511,7 +510,6 @@ export function App() {
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
-  const [deletingChannel, setDeletingChannel] = useState<Channel | null>(null);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [notificationCenterItems, setNotificationCenterItems] = useState(() => notificationCenterService.list());
   const notificationCenterItemsRef = useRef(notificationCenterItems);
@@ -600,7 +598,6 @@ export function App() {
     createCommunityOpen
     || createChannelCategoryId
     || editingChannel
-    || deletingChannel
     || reportTarget
     || memberModerationTarget
     || composerInviteOpen
@@ -4110,6 +4107,48 @@ export function App() {
     pushToast(`#${channel.name} created.`, "success");
   };
 
+  const handleDeleteChannel = async (channel: Channel) => {
+    if (!communityAccess.isOwner) {
+      pushToast("Bu kanalı yalnızca topluluk kurucusu silebilir.", "error");
+      return;
+    }
+
+    const fallback = activeCommunity.categories
+      .flatMap((category) => category.channels)
+      .find((item) => item.id !== channel.id && canViewChannel(communityAccess, item));
+    const result = await channelService.deleteChannel({
+      channelId: channel.id,
+      communityId: activeCommunity.id,
+      channelName: channel.name,
+      fallbackChannelId: fallback?.id ?? null,
+    });
+    if (!result.ok) {
+      pushToast(result.error.message, "error");
+      return;
+    }
+
+    replaceCommunities(communities.map((community) => community.id !== activeCommunity.id ? community : {
+      ...community,
+      categories: community.categories.map((category) => ({ ...category, channels: category.channels.filter((item) => item.id !== channel.id) })),
+      messages: community.messages.filter((message) => message.channelId !== channel.id),
+    }));
+    if (activeChannel.id === channel.id && result.data.fallbackChannelId) setActiveChannelId(result.data.fallbackChannelId);
+    pushToast("Kanal silindi. Bu işlem geri alınamaz.", "success");
+  };
+
+  const handleCommunityDeleted = (communityId: string) => {
+    const nextCommunity = communities.find((community) => community.id !== communityId);
+    invalidateCommunityHydration(communityId);
+    replaceCommunities(communities.filter((community) => community.id !== communityId));
+    if (nextCommunity) {
+      switchCommunity(nextCommunity.id);
+      setActiveView(communityViewForKind(nextCommunity.kind));
+    } else {
+      setActiveView("discovery");
+    }
+    pushToast("Topluluk kalıcı olarak silindi.", "success");
+  };
+
   const openProfile = (event: MouseEvent, member: Member) => {
     showProfile(member, event.clientX, event.clientY);
   };
@@ -4758,7 +4797,8 @@ export function App() {
                 onOpenAudio={() => setActiveView(communityViewForKind(displayedActiveCommunity.kind))}
                 onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
                 onEditChannel={setEditingChannel}
-                onDeleteChannel={setDeletingChannel}
+                onDeleteChannel={(channel) => void handleDeleteChannel(channel)}
+                onCommunityDeleted={handleCommunityDeleted}
                 onOpenSettings={openSettings}
                 onLogout={handleLogout}
                 onJoinCommunity={handleJoinCommunity}
@@ -4900,7 +4940,8 @@ export function App() {
                         );
                       },
                     },
-                    ...(canManageChannels(communityAccess) ? [{ label: "Edit channel", onSelect: () => setEditingChannel(channel) }, { label: "Delete channel", tone: "danger" as const, onSelect: () => setDeletingChannel(channel) }] : []),
+                    ...(canManageChannels(communityAccess) ? [{ label: "Edit channel", onSelect: () => setEditingChannel(channel) }] : []),
+                    ...(communityAccess.isOwner ? [{ label: "Kanalı sil", tone: "danger" as const, onSelect: () => void handleDeleteChannel(channel) }] : []),
                   ])
                 }
               />
@@ -5141,20 +5182,6 @@ export function App() {
           replaceCommunities(communities.map((community) => community.id !== activeCommunity.id ? community : { ...community, categories: community.categories.map((category) => ({ ...category, channels: category.id === updated.categoryId ? [...category.channels.filter((item) => item.id !== updated.id), { ...editingChannel, name: updated.name, type: updated.type, topic: updated.topic ?? undefined, isPrivate: updated.isPrivate, publicReadEnabled: updated.publicReadEnabled, categoryId: updated.categoryId ?? undefined }] : category.channels.filter((item) => item.id !== updated.id) })) }));
           setEditingChannel(null);
           pushToast("Channel updated.", "success");
-        }}
-      /> : null}
-      {deletingChannel ? <DeleteChannelModal
-        channel={deletingChannel}
-        isLastChannel={activeCommunity.categories.flatMap((category) => category.channels).length <= 1}
-        onClose={() => setDeletingChannel(null)}
-        onConfirm={async (confirmationName) => {
-          const fallback = activeCommunity.categories.flatMap((category) => category.channels).find((item) => item.id !== deletingChannel.id && canViewChannel(communityAccess, item));
-          const result = await channelService.deleteChannel({ channelId: deletingChannel.id, communityId: activeCommunity.id, channelName: deletingChannel.name, confirmName: confirmationName, fallbackChannelId: fallback?.id ?? null });
-          if (!result.ok) { pushToast(result.error.message, "error"); return; }
-          replaceCommunities(communities.map((community) => community.id !== activeCommunity.id ? community : { ...community, categories: community.categories.map((category) => ({ ...category, channels: category.channels.filter((item) => item.id !== deletingChannel.id) })), messages: community.messages.filter((message) => message.channelId !== deletingChannel.id) }));
-          if (activeChannel.id === deletingChannel.id && result.data.fallbackChannelId) setActiveChannelId(result.data.fallbackChannelId);
-          setDeletingChannel(null);
-          pushToast("Channel deleted.", "success");
         }}
       /> : null}
       {settingsOpen ? <Suspense fallback={null}><SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} appearanceSettings={appearanceSettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onAppearanceSettingsChange={(next) => { setAppearanceSettings(next); setTheme(appearanceService.resolveTheme(next.themeMode)); }} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onLogout={handleLogout} currentUsername={currentUser.username} currentEmail={authSession?.user?.email} currentEmailVerifiedAt={authSession?.user?.emailVerifiedAt} requireEmailVerification={appConfig.supabase.requireEmailVerification} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} onOpenPanel={openRootPanel} onOpenPublisherApply={() => { closeSettings(); setActiveView("publisherApply"); webNavigation?.navigate("/publisher/apply"); }} onOpenPublisherDashboard={() => { closeSettings(); setActiveView("publisherDashboard"); webNavigation?.navigate("/publisher/dashboard"); }} /></Suspense> : null}

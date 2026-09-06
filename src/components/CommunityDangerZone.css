@@ -33,16 +33,6 @@
   box-shadow: var(--shadow-soft);
 }
 
-.community-management-modal .community-danger-action-card--transfer {
-  border-color: color-mix(in srgb, var(--picom-rust) 30%, var(--border));
-  background: color-mix(in srgb, var(--picom-rust) 5%, var(--surface));
-}
-
-.community-management-modal .community-danger-action-card--archive {
-  border-color: color-mix(in srgb, var(--danger) 34%, var(--border));
-  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
-}
-
 .community-management-modal .community-danger-action-card--delete {
   border-color: color-mix(in srgb, var(--danger) 34%, var(--border));
   background: color-mix(in srgb, var(--danger) 5%, var(--surface));
@@ -63,18 +53,6 @@
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
   background: var(--surface);
-}
-
-.community-management-modal .community-danger-action-card--transfer .community-danger-action-icon {
-  color: var(--picom-rust);
-  background: color-mix(in srgb, var(--picom-rust) 10%, var(--surface));
-  border-color: color-mix(in srgb, var(--picom-rust) 24%, var(--border));
-}
-
-.community-management-modal .community-danger-action-card--archive .community-danger-action-icon {
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
-  border-color: color-mix(in srgb, var(--danger) 24%, var(--border));
 }
 
 .community-management-modal .community-danger-action-card--delete .community-danger-action-icon {

@@ -1,12 +1,12 @@
-# Soft Delete and Restore Policy
+# Deletion and retention policy
 
-Picom is a Windows/Linux/macOS Electron desktop community chat app backed by Supabase. Deletion behavior must be predictable, reversible where practical, and safe for audit, privacy, and moderation workflows.
+Picom is a Windows/Linux/macOS Electron desktop community chat app backed by Supabase. Deletion behavior must be predictable, safe for audit, privacy, and moderation workflows, and explicit about what is irreversible.
 
 ## Status
 
-- Runtime behavior: owner-only recoverable community archive is active
-- New destructive job: none
-- Current production posture: typed confirmation, reason, current-password reauthentication, atomic archive RPC, and append-only audit evidence
+- Community behavior: owner-only immediate, irreversible deletion behind a controlled feature flag
+- Account behavior: email-confirmed 30-day recovery lifecycle behind a separate controlled feature flag
+- Current production posture: both user-facing flags remain off pending hosted certification
 - Source of truth for active schema: `supabase/migrations`
 - Related docs:
   - `docs/database-integrity.md`
@@ -26,8 +26,8 @@ Picom is a Windows/Linux/macOS Electron desktop community chat app backed by Sup
 | Entity | Policy | Restore placeholder | Current implementation notes |
 | --- | --- | --- | --- |
 | Messages | Soft-delete | Yes | Active Supabase path sets `messages.deleted_at`; authorized fetches retain content-free tombstones so replies/order stay understandable. Local mock mode uses the same placeholder. |
-| Channels | Archive or soft-delete preferred | Yes | Current update/delete service is placeholder-only. Existing DB cascade only applies if a community is destructively deleted. |
-| Communities | Archive | Operations-controlled | Owner-only flow sets `archived_at`, disables public/discovery access, retains children and audit/security history, and never hard-deletes the community row. |
+| Channels | Immediate delete | No | Only the canonical community owner can remove a channel. The server requires another channel as a fallback and cascades dependent channel data safely. |
+| Communities | Immediate, non-restorable tombstone | No | Owner-only `delete_owned_community` immediately removes user-facing access, discovery, invites, joins and Community Live; only required non-restorable audit/security records remain. |
 | Users/profiles | Anonymize or mark deleted | Limited | Supabase Auth deletion can cascade profile rows, but production account deletion should anonymize before destructive auth deletion. |
 | Attachments | Soft-delete/quarantine metadata first; storage hard-delete after retention | Limited | Metadata cascades if the message is destructively deleted; storage cleanup must be a guarded backend job. |
 | Invites | Revoke/expire, then hard-delete cleanup later | No normal restore | Invite production table is not active yet. Cleanup scripts should only remove expired/revoked invites after retention. |
@@ -53,33 +53,23 @@ Restore placeholder:
 
 ## Channels
 
-Future policy:
-
-- Prefer `archived_at` or `deleted_at` before hard delete.
-- Hide archived/deleted channels from the sidebar.
-- Move channels out of deleted categories safely.
-- Restore should preserve category and position if possible, or restore to uncategorized if the category no longer exists.
-
-Danger requirements:
-
-- Channel deletion should require confirmation when messages exist.
-- Private channel restore must preserve permissions.
+The actual community founder may delete a channel immediately. There is no
+password or channel-name typing requirement. The deletion service selects a
+fallback first and refuses deletion of the final channel, so the active client
+can navigate safely. Moderators, members and foreign users are denied by the
+server RPC.
 
 ## Communities
 
-Current policy:
+Community deletion is immediate and irreversible from the user’s perspective.
+The community founder gets one confirmation dialog that explicitly says **Bu
+işlem geri alınamaz**. The server marks the community unavailable within the
+same trusted transaction, revokes invites, cancels joins, ends Community Live
+sessions and writes a safe audit event. There is no community recovery period,
+email, scheduler, finalizer or restore path.
 
-- Normal desktop flows archive rather than hard-delete communities.
-- The current owner must provide a reason, type the exact community name, and re-authenticate with the current password.
-- The atomic RPC sets `archived_at`, `archived_by`, and `archive_reason`; changes visibility to private; disables public reads and discovery; and appends an audit event.
-- Archived communities, channels, messages, Radio, and Podcast surfaces are inaccessible through normal RLS paths while retained for recovery and integrity review.
-- Audit and security history remains append-only.
-
-Restore policy:
-
-- Restore is operations-controlled rather than a normal owner action.
-- Backup verification and relationship integrity checks must complete before access is re-enabled.
-- Restore must validate memberships, roles, channels, messages, invites, storage references, Radio/Podcast records, and audit continuity.
+Retained audit or security records are non-restorable and do not make the
+community visible again.
 
 ## Users and profiles
 
@@ -150,29 +140,26 @@ Policy:
 
 Dangerous actions should require clear confirmation:
 
-- Delete community: owner-only, type community name, final confirmation.
-- Delete channel with messages: confirm name or explicit danger modal.
-- Delete account: confirmation phrase, session revocation, ownership handling.
+- Delete community: founder-only, one irreversible warning and confirmation.
+- Delete channel: founder-only immediate delete with a safe fallback channel.
+- Delete account: email confirmation before the 30-day recovery period, then
+  trusted finalization and session revocation.
 - Delete attachment/storage object: backend-only confirmation and dry-run.
 - Purge retention candidates: explicit environment flag and backup verification.
 
 ## Restore requirements
 
-Restore actions should:
-
-- Be permission-protected.
-- Be audit logged.
-- Check RLS and community/channel visibility.
-- Fail safely if related parent records no longer exist.
-- Avoid restoring quarantined or unsafe attachments.
-- Preserve ordering and sidebar state where practical.
+Account deletion can be canceled by its authenticated owner during the
+email-confirmed 30-day recovery window. Community and channel deletion have no
+restore requirement or product restore action.
 
 ## Current gaps
 
-- `deleted_at` is active for messages only.
-- Community recoverable archive schema and owner-only RPC are active; a self-service restore remains intentionally unavailable.
-- Channel archive/soft-delete schema is not active yet.
-- Account deletion anonymization fields/workflow exist, while hosted verification and final retention/legal approval remain required.
+- Message tombstones remain active.
+- Community and channel delete paths are immediate and founder/owner-scoped;
+  hosted certification is still required before feature activation.
+- Account deletion remains email-confirmed with 30-day recovery; hosted email
+  delivery and finalization certification remain separate release gates.
 - Production invite, report, notification, and audit log tables are not active yet.
 - Restore APIs are placeholders only.
 
@@ -180,6 +167,6 @@ Restore actions should:
 
 1. Delete a message in mock/Supabase mode and confirm it does not render as an active message.
 2. Confirm message fetch filters out `deleted_at` rows.
-3. Confirm community archive UI remains owner-only and requires reason, exact-name confirmation, and current-password reauthentication.
-4. Confirm account deletion placeholder says no renderer-side data has been deleted.
+3. Confirm community deletion is owner-only, immediate and has no restore UI.
+4. Confirm account deletion starts no countdown before email confirmation.
 5. Confirm audit log docs state normal flows cannot delete audit entries.

@@ -17,7 +17,7 @@ const communityDelete = read("docs/community-delete-safety-placeholder.md");
 const auditLog = read("docs/audit-log-immutability.md");
 
 for (const expected of [
-  "Soft Delete and Restore Policy",
+  "Deletion and retention policy",
   "Hard-deleted",
   "Soft-deleted",
   "Archived",
@@ -45,7 +45,9 @@ for (const expected of ["deleted_at", 'client.rpc("delete_message_with_version"'
 
 assertIncludes(messageList, "deleted_at", "message list query");
 assertIncludes(messageList, "deletedAt: row.deleted_at", "message list tombstone mapping");
-assertIncludes(communityDelete, "soft deletion with `deletedAt`", "community delete placeholder docs");
+for (const expected of ["immediate, irreversible", "delete_owned_community", "no password", "scheduled deletion date"]) {
+  assertIncludes(communityDelete, expected, "community deletion policy");
+}
 assertIncludes(auditLog, "append-only", "audit log immutability docs");
 
 console.log("Soft delete and restore policy smoke test passed.");
